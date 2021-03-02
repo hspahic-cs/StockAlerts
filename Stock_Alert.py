@@ -25,8 +25,11 @@ def getPrice(ticker):
     except:
         print("Error opening the URL")
 
-    soup = bs4.BeautifulSoup(page, "html.parser")
+    soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "utf-8")
     price = soup.find('div',{'class': 'My(6px) Pos(r) smartphone_Mt(6px)'}).find('span').text
+
+    #if charError(price):
+    #    return False
 
     return float(price)
 
@@ -45,9 +48,15 @@ def parsePrice(tickers):
 
     return "THE MARKET IS NOW CLOSED"
 
-def test(ticker):
-    price = float(getPrice(ticker))
-    return price
+def charError(text):
+    for char in text:
+        asc = ord(char)
+        if not (asc == 46 or 48 <= asc <= 57):
+            return True
+
+    return False
+
+# SET YOUR OWN EMAIL in : receiver_email
 
 def sendEmail(message):
     sender_email = "PassGoCollect98@gmail.com"
@@ -75,8 +84,12 @@ def getOpenPrice(ticker):
     except:
         print("Error opening the URL")
 
-    soup = bs4.BeautifulSoup(page, "html.parser")
+    soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "utf-8")
     open_price = soup.find('td',{'data-test': 'OPEN-value'}).find('span').text
+
+    #if charError(open_price):
+    #    return False
+
     return float(open_price)
 
 def alertDollarEmail(ticker, threshold):
@@ -98,31 +111,38 @@ def alertPercentEmail(ticker, threshold):
     market_open = check_market_open()
 
     while market_open:
-        # Get change in market
-        delta = (getPrice(ticker) - open_price) / open_price
 
-        # Check if meets threshold
-        if start_ticks == False:
-            if delta > threshold[1]:
-                message = "My My good sir, what crispy tendies you have waiting. Go cash in!"
-                sendEmail(message)
-                start_ticks = True;
-
-
-            elif delta < threshold[0]:
-                message = "Dropped the tendies in bucket... Better go pick up what you can."
-                sendEmail(message)
-                start_ticks = True;
+        # Checks for Character error, and if found resets iteration
+        if getPrice(ticker) == False or getOpenPrice(ticker) == False:
+            pass
 
         else:
-            ticks += 1
+            # Get change in market
+            delta = (getPrice(ticker) - open_price) / open_price
 
-        if ticks == 24:
-            ticks = 0
-            start_ticks = False
-            open_price = getPrice(ticker)
+            # Check if meets threshold & starts a 2 minute counter before resetting open price // Prevents spam emails
+            if start_ticks == False:
+                if delta > threshold[1]:
+                    message = "My My good sir, what crispy tendies you have waiting. Go cash in!"
+                    sendEmail(message)
+                    start_ticks = True;
 
-        print(f"Current Price is: {getPrice(ticker)}")
+
+                elif delta < threshold[0]:
+                    message = "Dropped the tendies in bucket... Better go pick up what you can."
+                    sendEmail(message)
+                    start_ticks = True;
+
+            else:
+                ticks += 1
+
+            if ticks == 24:
+                ticks = 0
+                start_ticks = False
+                open_price = getPrice(ticker)
+
+            print(f"Current Price is: {getPrice(ticker)}")
+
         time.sleep(5)
         market_open = check_market_open()
 
