@@ -67,12 +67,12 @@ class Stock_Portfolio:
 
     '''
     Sends email from a burner account to your email
-            ## NEEDS TO BE SECURED ##
+    ## NEEDS YOU TO INPUT BURNER EMAIL & PASSWORD ##
     '''
 
     def sendEmail(self, message):
-        sender_email = "PassGoCollect98@gmail.com"
-        password = "M0neyBags777"
+        sender_email = "ADD BURNDER EMAIL HERE"
+        password =  "ADD BURNER PASSWORD HERE"
 
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
@@ -91,7 +91,7 @@ class Stock_Portfolio:
 
         # Initializes & standardizes thresholds to %
         print("For dollar thresholds --> input int$ | For % change thresholds --> input int%")
-        print("Note: Upper and Lower thresholds can be different types & should both be POSITIVE")
+        print("Note: Upper and Lower thresholds can be different types & should both be POSITIVE \n")
 
         for stock in self.ptfl:
             stock.stdThresh()
@@ -199,10 +199,10 @@ class Stock:
         self.init_treshold()
         if self.threshold[0][-1] == "$":
             self.threshold[0] = float(self.threshold[0][:-1])
-            self.threshold[0] = -1*(1 - ((self.open_price + self.threshold[0]) / self.open_price))
+            self.threshold[0] = 1*(1 - ((self.open_price + self.threshold[0]) / self.open_price))
 
         else:
-            self.threshold[0] = float(self.threshold[0][:-1])
+            self.threshold[0] = float(-1*self.threshold[0][:-1])
 
         if self.threshold[1][-1] == "$":
             self.threshold[1] = float(self.threshold[1][:-1])
@@ -210,6 +210,8 @@ class Stock:
 
         else:
             self.threshold[1] = float(self.threshold[1][:-1])
+
+        print(self.threshold)
 
     """
     Threshold --> (-lower %, upper %)
@@ -240,8 +242,9 @@ class Stock:
         return message
 
 if __name__ == "__main__":
-    ptfl = ["GME", "NVDA"]
-    ptfl = Stock_Portfolio(ptfl, "harrisspahic1190@gmail.com")
-    ptfl.emailAlert()   
-    #print(ptfl.checkMarketOpen())
-    #print(ptfl.market_open)
+    # Add your own tickers below
+    ptfl = ["MSFT", "NVDA"]
+
+    #Add your email below
+    ptfl = Stock_Portfolio(ptfl, "your_email@email.com")
+    ptfl.emailAlert()
