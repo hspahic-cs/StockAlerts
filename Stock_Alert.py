@@ -7,151 +7,241 @@ import smtplib
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 
+# TIMEZONE defaults to NYC
+TIMEZONE = pytz.timezone('America/New_York')
+
 # GME : url = https://finance.yahoo.com/quote/GME?p=GME&.tsrc=fin-srch
 
-def check_market_open():
-    NYC = pytz.timezone('America/New_York')
-    current_time = dt.datetime.now(NYC)
+def changeTIMEZONE():
+    print("Timezne must be in the form found in pytz.all_timezones")
+    TIMEZONE = input("PLEASE INPUT TIMEZONE: ")
+    TIMEZONE = pytz.timezone(TIMEZONE)
 
-    if (current_time.hour <= 10) or (current_time.hour < 16):
-        return True
-    else:
-        return  False
+class Stock_Portfolio:
+    '''
+    [str] ptfl --> Portfolio containing ticker symbols, of all stocks you'd like to monitor
+    (str) email --> email you'd like alerts to be sent to
+    (str) timezone --> your timezone (must be in form found in pytz.all_timezones)
 
-def getPrice(ticker):
-    url = f"https://finance.yahoo.com/quote/{ticker}?p={ticker}&.tsrc=fin-srch"
-    try:
-        page = urlopen(url)
-    except:
-        print("Error opening the URL")
+    '''
 
-    soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "utf-8")
-    price = soup.find('div',{'class': 'My(6px) Pos(r) smartphone_Mt(6px)'}).find('span').text
+    def __init__(self, ptfl, email):
+        self.ptfl = []
+        for ticker in ptfl:
+            self.ptfl.append(Stock(ticker))
 
-    #if charError(price):
-    #    return False
+        self.email = email
+        self.time = dt.datetime.now(TIMEZONE)
 
-    return float(price)
 
-def parsePrice(tickers):
-    market_open = check_market_open()
+    '''
+    returns boolean if the market is currently open & updates current time
+    '''
 
-    while market_open:
-        for ticker in tickers:
-            price = getPrice(ticker)
-            print(f"Current Value of {ticker} is: {price}")
-
-        print("-----------------------------------")
-        time.sleep(60)
-
-        market_open = check_market_open()
-
-    return "THE MARKET IS NOW CLOSED"
-
-def charError(text):
-    for char in text:
-        asc = ord(char)
-        if not (asc == 46 or 48 <= asc <= 57):
+    def checkMarketOpen(self):
+        self.time = dt.datetime.now(TIMEZONE)
+        if (self.time.hour >= 10) or (self.time.hour < 16):
             return True
+        else:
+            return False
 
-    return False
+    '''
+    Continuously prints current price of tickers in portfolio until market closed
+    @param ticker : ticker you'd like to have the price return for
+    '''
 
-# SET YOUR OWN EMAIL in : receiver_email
+    def parsePrice(self):
+        market_open = self.checkMarketOpen()
 
-def sendEmail(message):
-    sender_email = "PassGoCollect98@gmail.com"
-    password = "M0neyBags777"
-    receiver_email = "harrisspahic1190@gmail.com"
+        while market_open:
+            for stock in self.ptfl:
+                stock.getPrice()
+                print(f"Current Value of {stock.ticker} is: {stock.current_price}")
 
-    server = smtplib.SMTP('smtp.gmail.com', 587)
-    server.starttls()
+            print("-----------------------------------")
+            time.sleep(60)
 
-    try:
-        server.login(sender_email, password)
-        #print("Login Success")
-    except:
-        print("There was an error")
+            market_open = self.checkMarketOpen()
 
-    server.sendmail(sender_email, receiver_email, message)
+        return "THE MARKET IS NOW CLOSED"
 
-"""
-Threshold --> (-lower $ amt, upper $ amt)
-"""
-def getOpenPrice(ticker):
-    url = f"https://finance.yahoo.com/quote/{ticker}?p={ticker}&.tsrc=fin-srch"
-    try:
-        page = urlopen(url)
-    except:
-        print("Error opening the URL")
+    '''
+    Sends email from a burner account to your email
+            ## NEEDS TO BE SECURED ##
+    '''
 
-    soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "utf-8")
-    open_price = soup.find('td',{'data-test': 'OPEN-value'}).find('span').text
+    def sendEmail(self, message):
+        sender_email = "PassGoCollect98@gmail.com"
+        password = "M0neyBags777"
 
-    #if charError(open_price):
-    #    return False
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
 
-    return float(open_price)
+        try:
+            server.login(sender_email, password)
+            #print("Login Success")
+        except:
+            print("There was an error")
 
-def alertDollarEmail(ticker, threshold):
-    open_price = float(getOpenPrice(ticker))
-    threshold[0] = -1*(1 - ((open_price + threshold[0]) / open_price))
-    threshold[1] = (((open_price + threshold[1]) / open_price) - 1)
-    #print(f"Threshold = f{threshold[0]}, f{threshold[1]}")
-    alertPercentEmail(ticker, [threshold[0], threshold[1]])
+        server.sendmail(self.email, self.email, message)
 
-"""
-Threshold --> (-lower %, upper %)
-"""
 
-def alertPercentEmail(ticker, threshold):
-    start_ticks = False;
-    ticks = 0;
+    def emailAlert(self):
+        market_open = self.checkMarketOpen()
 
-    open_price = getOpenPrice(ticker)
-    market_open = check_market_open()
+        # Initializes & standardizes thresholds to %
+        print("For dollar thresholds --> input int$ | For % change thresholds --> input int%")
+        print("Note: Upper and Lower thresholds can be different types & should both be POSITIVE")
 
-    while market_open:
+        for stock in self.ptfl:
+            stock.stdThresh()
 
-        # Checks for Character error, and if found resets iteration
-        if getPrice(ticker) == False or getOpenPrice(ticker) == False:
-            pass
+        while market_open:
+            messages = []
+
+            for stock in self.ptfl:
+                if not stock.delay:
+                    messages.append(stock.alertPercent())
+                else:
+                    # Waits 2 minutes, then resets open_price = current price of stock
+                    # so that new high or low, is checked for % change
+                    if (self.time - stock.time).seconds >= 120:
+                        stock.delay = False
+                        stock.open_price = stock.getPrice()
+
+            # Only keeps string messages
+            string_msg = [x for x in messages if isinstance(x, str)]
+
+            if string_msg:
+                string_msg = " \n ".join(string_msg)
+                self.sendEmail(string_msg)
+
+            time.sleep(5)
+            marketOpen = self.checkMarketOpen()
+
+        return "MARKET IS NOW CLOSED"
+
+class Stock:
+
+    '''
+    (str) ticker --> Ticker of particular stock
+    (float) current_price --> current price of stock
+    (float) open_price --> open price of stock
+    (bool) delay --> set to true if stock reaches threshold, starting a 2 minute delay before
+                     automatically resetting to a larger threshold
+    '''
+
+    def __init__(self, ticker):
+        self.ticker = ticker
+        self.current_price = self.getPrice()
+        self.open_price = self.getOpenPrice()
+        self.delay = False
+        self.threshold = []
+        self.time = 0
+
+    '''
+    returns current price of stock & updates current_price
+    '''
+
+    def getPrice(self):
+        url = f"https://finance.yahoo.com/quote/{self.ticker}?p={self.ticker}&.tsrc=fin-srch"
+        try:
+            page = urlopen(url)
+        except:
+            print("Error opening the URL")
+
+        soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "iso-8859-1")
+        price = soup.find('div',{'class': 'My(6px) Pos(r) smartphone_Mt(6px)'}).find('span', {'class': "Trsdu(0.3s) Fw(b) Fz(36px) Mb(-4px) D(ib)"}).text
+
+        self.current_price = float(price)
+        return float(price)
+
+    '''
+    returns open price of ticker & updates open price
+    '''
+
+    def getOpenPrice(self):
+        url = f"https://finance.yahoo.com/quote/{self.ticker}?p={self.ticker}&.tsrc=fin-srch"
+        try:
+            page = urlopen(url)
+        except:
+            print("Error opening the URL")
+
+        soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "iso-8859-1")
+        open_price = soup.find('td',{'data-test': 'OPEN-value'}).find('span').text
+
+        self.open_price = float(open_price)
+        return float(open_price)
+
+
+    # Should add message on right form
+
+    def init_treshold(self):
+        try:
+            upper = input(f"Please input upper_bound for {self.ticker} : ")
+            lower = input(f"Please input lower_bound for {self.ticker} : ")
+
+            if (not upper[-1] == "$") and (not lower[-1] == "%"):
+                raise ValueError
+
+            if (not upper[-1] == "$") and (not lower[-1] == "%"):
+                raise ValueError
+
+        except ValueError:
+            print("Oops! Your input was not valid, try again.")
+
+        self.threshold = [upper, lower]
+        print(self.threshold)
+
+
+
+    def stdThresh(self):
+        self.init_treshold()
+        if self.threshold[0][-1] == "$":
+            self.threshold[0] = float(self.threshold[0][:-1])
+            self.threshold[0] = -1*(1 - ((self.open_price + self.threshold[0]) / self.open_price))
 
         else:
-            # Get change in market
-            delta = (getPrice(ticker) - open_price) / open_price
+            self.threshold[0] = float(self.threshold[0][:-1])
 
-            # Check if meets threshold & starts a 2 minute counter before resetting open price // Prevents spam emails
-            if start_ticks == False:
-                if delta > threshold[1]:
-                    message = "My My good sir, what crispy tendies you have waiting. Go cash in!"
-                    sendEmail(message)
-                    start_ticks = True;
+        if self.threshold[1][-1] == "$":
+            self.threshold[1] = float(self.threshold[1][:-1])
+            self.threshold[1] = (((self.open_price + self.threshold[1]) / self.open_price) - 1)
 
+        else:
+            self.threshold[1] = float(self.threshold[1][:-1])
 
-                elif delta < threshold[0]:
-                    message = "Dropped the tendies in bucket... Better go pick up what you can."
-                    sendEmail(message)
-                    start_ticks = True;
+    """
+    Threshold --> (-lower %, upper %)
+    """
 
-            else:
-                ticks += 1
+    def alertPercent(self):
+        # Updates current market price
+        self.getPrice()
 
-            if ticks == 24:
-                ticks = 0
-                start_ticks = False
-                open_price = getPrice(ticker)
+        # Calculates % change in price from open
+        delta = (self.current_price - self.open_price) / self.open_price
+        print(f"Current Price of {self.ticker}: {self.current_price}")
 
-            print(f"Current Price is: {getPrice(ticker)}")
+        # Returns message if threshold reached and starts delay, otherwise returns false
+        if delta > self.threshold[1]:
+            message = f"My My good sir, what crispy tendies you have waiting for {self.ticker}. Go cash in!"
+            self.delay = True
+            self.time = dt.datetime.now(TIMEZONE)
 
-        time.sleep(5)
-        market_open = check_market_open()
+        elif delta < self.threshold[0]:
+            message = f"Dropped the tendies in a bucket for {self.ticker}... Better go pick up what you can."
+            self.delay = True
+            self.time = dt.datetime.now(TIMEZONE)
 
-    return "THE MARKET IS NOW CLOSED"
+        else:
+            return False;
+
+        return message
 
 if __name__ == "__main__":
-    tickers = ["GME"]
-    print(getOpenPrice(tickers[0]))
-    print(getPrice(tickers[0]))
-    #test = getOpenPrice(tickers[0])
-    #print(parsePrice(tickers))
-    alertDollarEmail(tickers[0] ,[-6, 6])
+    ptfl = ["GME", "NVDA"]
+    ptfl = Stock_Portfolio(ptfl, "harrisspahic1190@gmail.com")
+    ptfl.emailAlert()   
+    #print(ptfl.checkMarketOpen())
+    #print(ptfl.market_open)
