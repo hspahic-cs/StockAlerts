@@ -14,15 +14,15 @@ from Stock_Alert import Stock
     #stdTresh()
     #alertPercent()
 #Setting up the animation
-WIDTH = 1000
-HEIGHT = 700
+WIDTH = 1920
+HEIGHT = 1080
 xVelocity = 3
 yVelocity = 2
 window = Tk()
 canvas = Canvas(window,width=WIDTH,height=HEIGHT)
 canvas.pack()
 #selecting pictures and placing them on the canvas
-andromeda = PhotoImage(file='Images/Andromeda.png')
+andromeda = PhotoImage(file='Images/andromeda1080.png')
 wsb = PhotoImage(file='Images/wsb.png')
 IMG_W = wsb.width()
 IMG_H = wsb.height()
@@ -36,7 +36,6 @@ prev=GME.getPrice()
 timer = 0 
 while True:
     coordinates = canvas.coords(myImage)
-    print(coordinates)
     if (coordinates[0] >= (WIDTH-IMG_W) or coordinates[0]<0):
         xVelocity *= -1
     if (coordinates[1] >= (HEIGHT-IMG_H) or coordinates[1]<0):
@@ -45,12 +44,13 @@ while True:
     #Code for discplaying price
     if (timer == 180):
         new = GME.getPrice()
-        if(new < prev):
+        if((float(new) - float(prev))<= 0):
             color = "red"
         else:
             color = "green"
         price = Label(text=new,bg="black",fg=color,font=("Helvetica",36))
         price.place(height=150,width=150,x=((WIDTH/2)-50),y=((HEIGHT/2)-50))
+        prev = new
         timer = 0
     ###
     window.update()
