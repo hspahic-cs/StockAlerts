@@ -259,8 +259,8 @@ class Stock:
 
 if __name__ == "__main__":
     # Add your own tickers below
-    ptfl = ["GME"]
-    #GME = Stock("GME")
+    ptfl = ["MSFT", "NVDA","GME"]
+
     #Add your email below
     ptfl = Stock_Portfolio(ptfl, "harrisspahic1190@gmail.com")
     ptfl.emailAlert()
