@@ -21,17 +21,18 @@ yVelocity = 2
 window = Tk()
 canvas = Canvas(window,width=WIDTH,height=HEIGHT)
 canvas.pack()
-
-
+#selecting pictures and placing them on the canvas
 andromeda = PhotoImage(file='Images/Andromeda.png')
-background = canvas.create_image(0,0,image=andromeda,anchor=NW)
 wsb = PhotoImage(file='Images/wsb.png')
-myImage = canvas.create_image(0,0,image=wsb,anchor=NW)
-
 IMG_W = wsb.width()
 IMG_H = wsb.height()
+background = canvas.create_image(0,0,image=andromeda,anchor=NW)
+myImage = canvas.create_image(0,0,image=wsb,anchor=NW)
+
 
 GME = Stock("GME")
+prev=GME.getPrice()
+#timer prevents lag
 timer = 0 
 while True:
     coordinates = canvas.coords(myImage)
@@ -43,8 +44,12 @@ while True:
     canvas.move(myImage,xVelocity,yVelocity)
     #Code for discplaying price
     if (timer == 180):
-        x = GME.getPrice()
-        price = Label(text=x,bg="black",fg="green",font=("Helvetica",36))
+        new = GME.getPrice()
+        if(new < prev):
+            color = "red"
+        else:
+            color = "green"
+        price = Label(text=new,bg="black",fg=color,font=("Helvetica",36))
         price.place(height=150,width=150,x=((WIDTH/2)-50),y=((HEIGHT/2)-50))
         timer = 0
     ###
