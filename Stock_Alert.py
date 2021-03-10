@@ -40,7 +40,7 @@ class Stock_Portfolio:
 
     def checkMarketOpen(self):
         self.time = dt.datetime.now(TIMEZONE)
-        if (self.time.hour >= 10) or (self.time.hour < 16):
+        if (self.time.hour >= 10) and (self.time.hour < 16):
             return True
         else:
             return False
@@ -71,8 +71,8 @@ class Stock_Portfolio:
     '''
 
     def sendEmail(self, message):
-        sender_email = "ADD BURNDER EMAIL HERE"
-        password =  "ADD BURNER PASSWORD HERE"
+        sender_email = "PassGoCollect98@gmail.com"
+        password = "M0neyBags777"
 
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
@@ -117,9 +117,9 @@ class Stock_Portfolio:
                 self.sendEmail(string_msg)
 
             time.sleep(5)
-            marketOpen = self.checkMarketOpen()
+            market_open = self.checkMarketOpen()
 
-        return "MARKET IS NOW CLOSED"
+        return print("MARKET IS NOW CLOSED")
 
 class Stock:
 
@@ -151,7 +151,14 @@ class Stock:
             print("Error opening the URL")
 
         soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "iso-8859-1")
-        price = soup.find('div',{'class': 'My(6px) Pos(r) smartphone_Mt(6px)'}).find('span', {'class': "Trsdu(0.3s) Fw(b) Fz(36px) Mb(-4px) D(ib)"}).text
+        price = soup.find('div',{'class': 'My(6px) Pos(r) smartphone_Mt(6px)'})
+
+        if price is None:
+            time.sleep(1)
+            price = self.getPrice()
+
+        else:
+            price = price.find('span', {'class': "Trsdu(0.3s) Fw(b) Fz(36px) Mb(-4px) D(ib)"}).text
 
         self.current_price = float(price)
         return float(price)
@@ -168,7 +175,13 @@ class Stock:
             print("Error opening the URL")
 
         soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "iso-8859-1")
-        open_price = soup.find('td',{'data-test': 'OPEN-value'}).find('span').text
+        open_price = soup.find('td',{'data-test': 'OPEN-value'})
+
+        while open_price is None:
+            soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "iso-8859-1")
+            open_price = soup.find('td',{'data-test': 'OPEN-value'})
+
+        open_price = open_price.find('span').text
 
         self.open_price = float(open_price)
         return float(open_price)
@@ -197,12 +210,14 @@ class Stock:
 
     def stdThresh(self):
         self.init_treshold()
+
         if self.threshold[0][-1] == "$":
             self.threshold[0] = float(self.threshold[0][:-1])
             self.threshold[0] = 1*(1 - ((self.open_price + self.threshold[0]) / self.open_price))
 
         else:
-            self.threshold[0] = float(-1*self.threshold[0][:-1])
+            self.threshold[0] = float(self.threshold[0][:-1])
+            self.threshold[0] = (-1*self.threshold[0]) / 100
 
         if self.threshold[1][-1] == "$":
             self.threshold[1] = float(self.threshold[1][:-1])
@@ -210,6 +225,7 @@ class Stock:
 
         else:
             self.threshold[1] = float(self.threshold[1][:-1])
+            self.threshold[1] = (self.threshold[1]) / 100
 
         print(self.threshold)
 
@@ -243,8 +259,8 @@ class Stock:
 
 if __name__ == "__main__":
     # Add your own tickers below
-    ptfl = ["MSFT", "NVDA"]
-
+    ptfl = ["GME"]
+    #GME = Stock("GME")
     #Add your email below
-    ptfl = Stock_Portfolio(ptfl, "your_email@email.com")
+    ptfl = Stock_Portfolio(ptfl, "harrisspahic1190@gmail.com")
     ptfl.emailAlert()
