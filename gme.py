@@ -10,24 +10,18 @@ import smtplib
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 
-#a variation of Titan1190's getPrice function
-def getPrice(ticker):
-    url = f"https://finance.yahoo.com/quote/{ticker}?p={ticker}&.tsrc=fin-srch"
-    try:
-        page = urlopen(url)
-    except:
-        print("Error opening the URL")
+from Stock_Alert import Stock 
+    #List of functions in Stock
+    #__init__(self,ticker)
+    #getPrice()
+    #getOpenPrice()
+    #init_treshold()
+    #stdTresh()
+    #alertPercent()
 
-    soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "iso-8859-1")
-    price = soup.find('div',{'class': 'My(6px) Pos(r) smartphone_Mt(6px)'}).find('span', {'class': "Trsdu(0.3s) Fw(b) Fz(36px) Mb(-4px) D(ib)"}).text
-
-    return float(price)
-
-    '''
-    returns open price of ticker & updates open price
-    '''
 ############################################
 #testing
+GME = Stock("GME")
 while True:
-    print(getPrice("GME"))
+    print(GME.getPrice())
 
