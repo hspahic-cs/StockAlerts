@@ -13,6 +13,7 @@ from Stock_Alert import Stock
     #init_treshold()
     #stdTresh()
     #alertPercent()
+
 #Setting up the animation
 WIDTH = 1920
 HEIGHT = 1080
@@ -31,7 +32,7 @@ myImage = canvas.create_image(0,0,image=wsb,anchor=NW)
 
 
 GME = Stock("GME")
-prev=GME.getPrice()
+prev=GME.getAfterMarketPrice()
 #timer prevents lag
 timer = 0 
 while True:
@@ -43,7 +44,7 @@ while True:
     canvas.move(myImage,xVelocity,yVelocity)
     #Code for discplaying price
     if (timer == 180):
-        new = GME.getPrice()
+        new = GME.getAfterMarketPrice()
         if((float(new) - float(prev))<= 0):
             color = "red"
         else:
