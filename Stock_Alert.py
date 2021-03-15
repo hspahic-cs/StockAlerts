@@ -165,11 +165,33 @@ class Stock:
 
         self.current_price = float(price)
         return float(price)
+    '''
+    gets the post/premarket prices and updates current price 
+    '''
+    def getAfterMarketPrice(self):
+        url = f"https://finance.yahoo.com/quote/{self.ticker}?p={self.ticker}&.tsrc=fin-srch"
+        try:
+            page = urlopen(url)
+        except:
+            print("Error opening the URL")
+
+        soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "iso-8859-1")
+        price = soup.find('div',{'class': 'My(6px) Pos(r) smartphone_Mt(6px)'})
+        
+        if price is None:
+            time.sleep(1)
+            price = self.getAfterMarketPrice()
+        else:
+            price = price.find('span',{'class':"C($primaryColor) Fz(24px) Fw(b)"}).text
+        
+        self.current_price = float(price)
+        return float(price)
+
 
     '''
     getOpenPrice: returns open price of ticker & updates open price
     '''
-
+    
     def getOpenPrice(self):
         url = f"https://finance.yahoo.com/quote/{self.ticker}?p={self.ticker}&.tsrc=fin-srch"
         try:
