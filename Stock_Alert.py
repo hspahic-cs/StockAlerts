@@ -35,7 +35,7 @@ class Stock_Portfolio:
 
 
     '''
-    returns boolean if the market is currently open & updates current time
+    checkMarketOpen: returns boolean if the market is currently open & updates current time
     '''
 
     def checkMarketOpen(self):
@@ -46,8 +46,7 @@ class Stock_Portfolio:
             return False
 
     '''
-    Continuously prints current price of tickers in portfolio until market closed
-    @param ticker : ticker you'd like to have the price return for
+    parsePrice: Continuously prints current price of tickers in portfolio until market closed
     '''
 
     def parsePrice(self):
@@ -66,7 +65,7 @@ class Stock_Portfolio:
         return "THE MARKET IS NOW CLOSED"
 
     '''
-    Sends email from a burner account to your email
+    sendEmail: Sends email from a burner account to your email
     ## NEEDS YOU TO INPUT BURNER EMAIL & PASSWORD ##
     '''
 
@@ -85,6 +84,10 @@ class Stock_Portfolio:
 
         server.sendmail(self.email, self.email, message)
 
+    '''
+    emailAlert: Initializes thresholds, then continuously monitors stock prices,
+                and sends email if any threshold is reached
+    '''
 
     def emailAlert(self):
         market_open = self.checkMarketOpen()
@@ -140,7 +143,7 @@ class Stock:
         self.time = 0
 
     '''
-    returns current price of stock & updates current_price
+    getPrice: returns current price of stock & updates current_price
     '''
 
     def getPrice(self):
@@ -164,7 +167,7 @@ class Stock:
         return float(price)
 
     '''
-    returns open price of ticker & updates open price
+    getOpenPrice: returns open price of ticker & updates open price
     '''
 
     def getOpenPrice(self):
@@ -177,39 +180,45 @@ class Stock:
         soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "iso-8859-1")
         open_price = soup.find('td',{'data-test': 'OPEN-value'})
 
-        while open_price is None:
-            soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "iso-8859-1")
-            open_price = soup.find('td',{'data-test': 'OPEN-value'})
+        if open_price is None:
+            time.sleep(1)
+            open_price = self.getOpenPrice()
 
-        open_price = open_price.find('span').text
+        else:
+            open_price = open_price.find('span').text
 
         self.open_price = float(open_price)
         return float(open_price)
 
+    '''
+    init_thresh: Initializes an alert threshold for a stock
+    # Asks for upper & lower bound inputs
+    # Form of input: num$ or num% (lower bound is automatically converted to negative, if not already)
+    '''
 
-    # Should add message on right form
+    def init_threshold(self):
+        valid = False
+        while not valid:
+            try:
+                upper = input(f"Please input upper_bound for {self.ticker} : ")
+                lower = input(f"Please input lower_bound for {self.ticker} : ")
 
-    def init_treshold(self):
-        try:
-            upper = input(f"Please input upper_bound for {self.ticker} : ")
-            lower = input(f"Please input lower_bound for {self.ticker} : ")
+                if (not upper[-1] == "$") and (not lower[-1] == "%"):
+                    raise ValueError
 
-            if (not upper[-1] == "$") and (not lower[-1] == "%"):
-                raise ValueError
+                if (not upper[-1] == "$") and (not lower[-1] == "%"):
+                    raise ValueError
 
-            if (not upper[-1] == "$") and (not lower[-1] == "%"):
-                raise ValueError
-
-        except ValueError:
-            print("Oops! Your input was not valid, try again.")
+                valid = True
+            except ValueError:
+                print("\nInput should be in the form 'num$' or 'num%'")
 
         self.threshold = [upper, lower]
-        print(self.threshold)
 
-
+    "stdThresh: Standardizes all thresholds to %"
 
     def stdThresh(self):
-        self.init_treshold()
+        self.init_threshold()
 
         if self.threshold[0][-1] == "$":
             self.threshold[0] = float(self.threshold[0][:-1])
@@ -218,6 +227,10 @@ class Stock:
         else:
             self.threshold[0] = float(self.threshold[0][:-1])
             self.threshold[0] = (-1*self.threshold[0]) / 100
+
+        # Makes sure threshold is negative
+        if self.threshold[0] > 0:
+            self.threshold[0] *= -1
 
         if self.threshold[1][-1] == "$":
             self.threshold[1] = float(self.threshold[1][:-1])
@@ -230,7 +243,8 @@ class Stock:
         print(self.threshold)
 
     """
-    Threshold --> (-lower %, upper %)
+    alertPercent: Checks if threshold is reached at current price,
+                  if true returns message; otherwise returns false
     """
 
     def alertPercent(self):
@@ -259,7 +273,7 @@ class Stock:
 
 if __name__ == "__main__":
     # Add your own tickers below
-    ptfl = ["MSFT", "NVDA","GME"]
+    ptfl = ["GME"]
 
     #Add your email below
     ptfl = Stock_Portfolio(ptfl, "harrisspahic1190@gmail.com")
