@@ -32,7 +32,8 @@ myImage = canvas.create_image(0,0,image=wsb,anchor=NW)
 
 
 GME = Stock("GME")
-prev=GME.getAfterMarketPrice()
+prev=GME.getPrice()
+#prev=GME.getAfterMarketPrice()
 #timer prevents lag
 timer = 0 
 while True:
@@ -44,7 +45,8 @@ while True:
     canvas.move(myImage,xVelocity,yVelocity)
     #Code for discplaying price
     if (timer == 180):
-        new = GME.getAfterMarketPrice()
+        #new = GME.getAfterMarketPrice()
+        new = GME.getPrice()
         if((float(new) - float(prev))<= 0):
             color = "red"
         else:
