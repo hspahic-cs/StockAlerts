@@ -17,6 +17,22 @@ def changeTIMEZONE():
     TIMEZONE = input("PLEASE INPUT TIMEZONE: ")
     TIMEZONE = pytz.timezone(TIMEZONE)
 
+def openUrl(url):
+    Success = False
+    count = 0
+    while not Success:
+        if count > 100:
+            print("There seems to be an issue connecting with the site")
+            return null
+        try:
+            page = urlopen(url)
+            Success = True
+        except:
+            count+=1
+            time.sleep(.5)
+
+    return page
+
 class Stock_Portfolio:
     '''
     [str] ptfl --> Portfolio containing ticker symbols, of all stocks you'd like to monitor
@@ -148,10 +164,7 @@ class Stock:
 
     def getPrice(self):
         url = f"https://finance.yahoo.com/quote/{self.ticker}?p={self.ticker}&.tsrc=fin-srch"
-        try:
-            page = urlopen(url)
-        except:
-            print("Error opening the URL")
+        page = openUrl(url)
 
         soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "iso-8859-1")
         price = soup.find('div',{'class': 'My(6px) Pos(r) smartphone_Mt(6px)'})
@@ -165,25 +178,23 @@ class Stock:
 
         self.current_price = float(price)
         return float(price)
+
     '''
-    gets the post/premarket prices and updates current price 
+    getAfterMarketPrice: gets the post/premarket prices and updates current price
     '''
     def getAfterMarketPrice(self):
         url = f"https://finance.yahoo.com/quote/{self.ticker}?p={self.ticker}&.tsrc=fin-srch"
-        try:
-            page = urlopen(url)
-        except:
-            print("Error opening the URL")
+        page = openUrl(url)
 
         soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "iso-8859-1")
         price = soup.find('div',{'class': 'My(6px) Pos(r) smartphone_Mt(6px)'})
-        
+
         if price is None:
             time.sleep(1)
             price = self.getAfterMarketPrice()
         else:
             price = price.find('span',{'class':"C($primaryColor) Fz(24px) Fw(b)"}).text
-        
+
         self.current_price = float(price)
         return float(price)
 
@@ -191,13 +202,10 @@ class Stock:
     '''
     getOpenPrice: returns open price of ticker & updates open price
     '''
-    
+
     def getOpenPrice(self):
         url = f"https://finance.yahoo.com/quote/{self.ticker}?p={self.ticker}&.tsrc=fin-srch"
-        try:
-            page = urlopen(url)
-        except:
-            print("Error opening the URL")
+        page = openUrl(url)
 
         soup = bs4.BeautifulSoup(page, "html.parser", from_encoding = "iso-8859-1")
         open_price = soup.find('td',{'data-test': 'OPEN-value'})
